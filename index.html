@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Keep this tool out of search engines and AI crawlers. Respected by Google, Bing, DuckDuckGo, Yandex and others. -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="referrer" content="no-referrer">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>DoDump 3D</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpolygon%20points%3D%223.5%2C21%207%2C11%2015%2C5.5%2025%2C7.5%2029%2C17%2025%2C26.5%2012%2C27.5%22%20fill%3D%22%230b6a86%22/%3E%3Cpolygon%20points%3D%227%2C11%2015%2C5.5%2025%2C7.5%2020.5%2C14%2010%2C15%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.35%22/%3E%3Cpolygon%20points%3D%2225%2C7.5%2029%2C17%2025%2C26.5%2020.5%2C14%22%20fill%3D%22%23000000%22%20opacity%3D%220.22%22/%3E%3C/svg%3E">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: three-pane engineering console. Inputs | section view | live readings. Collapses to one column on phones. */
+:root {
+  --bg: #e9edef; --panel: #ffffff; --panel-2: #f4f7f8; --ink: #13222c; --muted: #5a6a74; --line: #d2dade;
+  --accent: #0b6a86; --accent-ink: #ffffff; --canvas-bg: #f6f8f9; --wall: #7a909c; --wall-line: #2c414d; --grid: #e0e6e9;
+  --part-edge: rgba(12, 24, 32, 0.45);
+  --st-green: #2f8a57; --st-yellow: #c99a00; --st-orange: #dc6418; --st-red: #c4282c;
+  --st-green-bg: #e3f2e9; --st-yellow-bg: #fbf1cf; --st-orange-bg: #fde6d6; --st-red-bg: #fadcdc;
+  --c-in: #3b5bb5; --c-out: #0b8a7a;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c1317; --panel: #131c22; --panel-2: #18232a; --ink: #e2e9ed; --muted: #8b9ca6; --line: #25333b;
+  --accent: #4cb2cd; --accent-ink: #06222b; --canvas-bg: #091014; --wall: #6f8794; --wall-line: #b4c6cf; --grid: #1b272e;
+  --part-edge: rgba(0, 0, 0, 0.55);
+  --st-green: #4fbf7f; --st-yellow: #e6be3a; --st-orange: #f2894a; --st-red: #f0605f;
+  --st-green-bg: #13301f; --st-yellow-bg: #362c0b; --st-orange-bg: #3b2213; --st-red-bg: #3d1717;
+  --c-in: #8ea8f2; --c-out: #4fd0bd; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0c1317; --panel: #131c22; --panel-2: #18232a; --ink: #e2e9ed; --muted: #8b9ca6; --line: #25333b;
+  --accent: #4cb2cd; --accent-ink: #06222b; --canvas-bg: #091014; --wall: #6f8794; --wall-line: #b4c6cf; --grid: #1b272e;
+  --part-edge: rgba(0, 0, 0, 0.55);
+  --st-green: #4fbf7f; --st-yellow: #e6be3a; --st-orange: #f2894a; --st-red: #f0605f;
+  --st-green-bg: #13301f; --st-yellow-bg: #362c0b; --st-orange-bg: #3b2213; --st-red-bg: #3d1717;
+  --c-in: #8ea8f2; --c-out: #4fd0bd; color-scheme: dark; }
+
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 13px/1.45 var(--font-body); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--panel); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.brand h1 { margin: 0; font: 700 22px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+.brand h1 span { color: var(--accent); }
+.brand h1.logo { display: inline-flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0.02em; font-size: 26px; }
+.brand h1.logo .logo-do { color: var(--ink); }
+.logo-rock { width: 30px; height: 30px; flex: none; }
+.level { font: 500 11px/1.2 var(--font-mono); color: var(--muted); border: 1px solid var(--line); padding: 3px 7px; border-radius: 3px; }
+.tabs { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 10px; font: 600 14px/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs button[hidden] { display: none; }
+.tabs .admin-btn { font-size: 11px; color: var(--muted); border: 1px solid var(--line, #8885); border-radius: 3px; margin-left: 8px; padding: 4px 8px; align-self: center; }
+.tabs .admin-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.admin-dlg { border: 1px solid var(--line, #8885); border-radius: 6px; padding: 18px 20px; background: var(--panel); color: var(--ink); min-width: 280px; }
+.admin-dlg::backdrop { background: rgba(0, 0, 0, 0.45); }
+.admin-dlg label { display: grid; gap: 4px; margin: 10px 0; font-size: 13px; }
+.admin-dlg input { padding: 6px 8px; font: inherit; }
+main { min-height: 0; position: relative; }
+.tab { height: 100%; overflow: auto; }
+
+/* Simulate tab grid */
+#tab-sim { display: grid; grid-template-columns: 330px minmax(0, 1fr) var(--live-w, 400px); overflow: hidden; }
+#tab-sim[hidden] { display: none; }
+.inputs { overflow: auto; border-right: 1px solid var(--line); background: var(--panel); min-width: 0; }
+.stage { display: grid; grid-template-rows: auto auto 1fr auto; min-width: 0; min-height: 0; }
+.live { overflow: auto; border-left: 1px solid var(--line); background: var(--panel); padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+details.grp { border-bottom: 1px solid var(--line); }
+details.grp > summary { list-style: none; cursor: pointer; padding: 10px 14px; font: 600 15px/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+details.grp > summary::-webkit-details-marker { display: none; }
+details.grp > summary::after { content: "+"; font-family: var(--font-mono); color: var(--muted); }
+details.grp[open] > summary::after { content: "\2212"; }
+details.grp > summary small { font: 400 11px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--st-orange); margin-left: auto; margin-right: 6px; }
+.grpbody { padding: 0 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 8px; align-items: center; }
+.row .lab { color: var(--ink); min-width: 0; }
+.row[title] .lab { text-decoration: underline dotted var(--muted); text-underline-offset: 3px; cursor: help; }
+.ctl { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.ctl input, .ctl select { width: 100%; min-width: 0; padding: 4px 6px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel-2); font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.ctl select { font-family: var(--font-body); }
+.ctl input.bad { border-color: var(--st-red); }
+.unit { font: normal 11px var(--font-mono); color: var(--muted); min-width: 34px; }
+.row.check { grid-template-columns: auto 1fr; justify-content: start; }
+.row.check input { margin: 0; accent-color: var(--accent); }
+.note { color: var(--muted); font-size: 12px; margin: 2px 0; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); padding: 6px 12px; border-radius: 3px; cursor: pointer; font: 600 13px/1 var(--font-display); letter-spacing: 0.07em; text-transform: uppercase; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.sm { padding: 4px 9px; font-size: 12px; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; text-decoration: underline; }
+.link.danger { color: var(--st-red); }
+.tbl-wrap { overflow-x: auto; max-width: 100%; }
+.btable { border-collapse: collapse; width: 100%; font-size: 11px; }
+.btable th { font-weight: 500; color: var(--muted); text-align: left; padding: 2px; }
+.btable th em { font-style: normal; font-family: var(--font-mono); }
+.btable td { padding: 2px; }
+.btable input { width: 100%; min-width: 46px; padding: 3px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel-2); font-family: var(--font-mono); font-size: 11px; }
+.msg { margin: 0 0 6px; padding: 6px 8px; border-radius: 3px; font-size: 12px; border-left: 3px solid; }
+.msg.err { background: var(--st-red-bg); border-color: var(--st-red); }
+.msg.warn { background: var(--st-yellow-bg); border-color: var(--st-yellow); }
+.msg.ok { background: var(--st-green-bg); border-color: var(--st-green); }
+p.ok { color: var(--st-green); margin: 0; }
+.kv { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 3px 10px; margin: 0; font-size: 12px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.kv.wide { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); }
+
+/* Stage */
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.controls .sep { flex: 1; }
+.controls label { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; }
+.controls select { padding: 3px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel-2); }
+.viewbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel-2); font-size: 12px; color: var(--muted); }
+.viewbar label { display: flex; align-items: center; gap: 4px; }
+.viewbar input[type=checkbox] { accent-color: var(--accent); }
+.viewbar select { padding: 2px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
+.canvas-wrap { position: relative; min-height: 0; }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; display: block; }
+#pending { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--st-yellow-bg); border: 1px solid var(--st-yellow); padding: 5px 10px; border-radius: 3px; font-size: 12px; max-width: calc(100% - 24px); }
+.legend { padding: 6px 12px; border-top: 1px solid var(--line); background: var(--panel); font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 3px; }
+.lg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.lg-row b { color: var(--ink); font-weight: 500; }
+.lg-scale { display: inline-block; width: 120px; height: 9px; border-radius: 2px; }
+.lg-lab { font-family: var(--font-mono); }
+.lg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.lg-ring { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid var(--st-orange); }
+.lg-band { display: inline-block; width: 14px; height: 6px; background: var(--accent); opacity: 0.6; }
+.durctl input { width: 70px; padding: 3px 5px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel-2); font: 12px var(--font-mono); color: var(--ink); }
+.durctl select { padding: 3px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel-2); }
+.charttools { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+.charttools label { display: flex; align-items: center; gap: 5px; }
+.charttools select { padding: 3px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel-2); }
+.chartbox { position: relative; }
+.chartbox .enl { position: absolute; right: 0; top: -2px; z-index: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; color: var(--muted); font: 600 10px/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 6px; cursor: pointer; opacity: 0.85; }
+.chartbox .enl:hover, .chartbox .enl:focus-visible { color: var(--accent); border-color: var(--accent); opacity: 1; }
+.live .chart { height: var(--ch-h, 132px); padding-top: 14px; }
+.live .chart.short { height: calc(var(--ch-h, 132px) * 0.72); }
+.live .chart.tall { height: calc(var(--ch-h, 132px) * 1.15); }
+.bigdlg { position: fixed; inset: 0; z-index: 50; background: color-mix(in srgb, var(--ink) 45%, transparent); display: flex; align-items: center; justify-content: center; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.bigpanel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; width: min(1400px, 100%); height: min(820px, 92%); display: flex; flex-direction: column; padding: 12px 14px; gap: 8px; }
+.bighead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.bighead h3 { margin: 0; font: 600 18px var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.bighead .btn { margin-left: auto; }
+#bigCanvas { flex: 1; width: 100%; min-height: 0; display: block; }
+.lg-arrow { color: var(--accent); font-weight: 700; }
+.lg-strip { display: inline-block; width: 6px; height: 14px; background: linear-gradient(var(--accent), var(--st-yellow)); }
+
+/* Live */
+.pill { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 4px; border-left: 6px solid; }
+.pill b { font: 700 22px/1 var(--font-display); letter-spacing: 0.08em; }
+.pill span { font-size: 12px; }
+.st0 { background: var(--st-green-bg); border-color: var(--st-green); }
+.st1 { background: var(--st-yellow-bg); border-color: var(--st-yellow); }
+.st2 { background: var(--st-orange-bg); border-color: var(--st-orange); }
+.st3 { background: var(--st-red-bg); border-color: var(--st-red); }
+.stw { background: var(--panel-2); border-color: var(--line); }
+.st0 b { color: var(--st-green); } .st1 b { color: var(--st-yellow); } .st2 b { color: var(--st-orange); } .st3 b { color: var(--st-red); }
+#readout { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 4px 8px; font: 500 13px var(--font-mono); font-variant-numeric: tabular-nums; }
+#readout em { display: block; font: normal 10px var(--font-body); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+#readout .warnc { color: var(--st-orange); }
+.bgnote { margin: 8px 0 0; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--panel-2); font-size: 13px; }
+.lg-wl { display: inline-block; width: 22px; height: 0; border-top: 2px solid #2a8bd6; vertical-align: middle; margin: 0 4px; }
+.lg-wl.dash { border-top-style: dashed; }
+.dumped { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
+.dumped div { border: 1px solid var(--line, #ccc); border-radius: 4px; padding: 6px 8px; }
+.dumped em { display: block; font: normal 10px var(--font-body); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.dumped b { display: block; font: 600 18px var(--font-mono); font-variant-numeric: tabular-nums; }
+.dumped div.main b { color: var(--accent); }
+.dumped small { display: block; color: var(--muted); font-size: 11px; line-height: 1.3; }
+#reasons { font-size: 12px; color: var(--muted); min-height: 2.9em; }
+.arch { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 4px; border-left: 4px solid; font-size: 12px; }
+.arch b { font-weight: 600; }
+.chart { width: 100%; height: 132px; display: block; }
+.chart.tall { height: 150px; }
+.live h3, .card h3, .section h3 { margin: 4px 0 2px; font: 600 15px/1.1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+table.data { border-collapse: collapse; width: 100%; font-size: 11.5px; }
+table.data th { text-align: left; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--line); padding: 4px 6px; white-space: nowrap; }
+table.data td { border-bottom: 1px solid var(--line); padding: 4px 6px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.data td.wrap { white-space: normal; min-width: 180px; font-family: var(--font-body); }
+table.data tr.sel td { background: var(--panel-2); }
+.tag { display: inline-block; padding: 2px 7px; border-radius: 3px; border-left: 3px solid; font: 500 11px var(--font-body); white-space: nowrap; }
+
+/* Other tabs */
+.page { max-width: 1240px; margin: 0 auto; padding-block: 18px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 16px; }
+.page > h2 { margin: 0; font: 700 26px/1.1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; text-wrap: balance; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 14px; min-width: 0; }
+.sumhead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sumhead h3 { margin: 0; }
+h4 { margin: 14px 0 6px; font: 600 14px var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.diaggrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+.flags { display: flex; flex-direction: column; }
+.studyform { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.studyform .row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+.studyform .row.check { grid-template-columns: auto 1fr; }
+.prog { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; }
+#stBar { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+#stProg { font: 12px var(--font-mono); color: var(--muted); }
+table.matrix { border-collapse: separate; border-spacing: 4px; }
+table.matrix th { font-weight: 500; text-align: left; padding: 4px 8px; color: var(--muted); font-size: 12px; }
+table.matrix tbody th { color: var(--ink); max-width: 220px; }
+table.matrix td { min-width: 150px; padding: 8px 10px; border-radius: 4px; border-left: 5px solid var(--line); background: var(--panel-2); vertical-align: top; font-size: 11.5px; }
+table.matrix td b { display: block; font: 600 14px var(--font-display); letter-spacing: 0.05em; }
+table.matrix td span { display: block; font-family: var(--font-mono); color: var(--muted); }
+table.matrix td.pend { color: var(--muted); }
+table.matrix td.cell-err { border-color: var(--st-red); }
+.prose { max-width: 78ch; }
+.prose h3 { margin: 20px 0 6px; font: 600 18px/1.2 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+.prose p, .prose li { line-height: 1.6; }
+.prose code { font-family: var(--font-mono); font-size: 12px; background: var(--panel-2); padding: 1px 4px; border-radius: 2px; }
+.levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.levels div { padding: 10px 12px; border-radius: 4px; border-left: 5px solid; }
+.levels b { display: block; font: 600 15px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+.lv-now { outline: 2px solid var(--accent); outline-offset: 2px; }
+pre.code { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 10px; overflow-x: auto; font: 11.5px/1.5 var(--font-mono); }
+svg.fig { width: 100%; max-width: 560px; height: auto; display: block; }
+svg.fig text { font: 11px var(--font-mono); fill: var(--muted); }
+
+
+/* V2 additions */
+.muted { color: var(--muted); }
+.warnc { color: var(--st-orange); }
+.chk { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.chk b { font-weight: 500; }
+.chk .cval { grid-column: 2; font-family: var(--font-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.chk .cnote { grid-column: 2; color: var(--muted); font-size: 11.5px; }
+.chk.lv1 .cval { color: var(--st-orange); } .chk.lv3 .cval { color: var(--st-red); font-weight: 600; }
+.ctag { display: inline-block; font: 600 10px/1.6 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; padding: 0 5px; border-radius: 2px; border: 1px solid; white-space: nowrap; align-self: start; }
+.t-analytical { color: var(--c-in); border-color: var(--c-in); } .t-empirical { color: var(--st-orange); border-color: var(--st-orange); }
+.t-assumption { color: var(--muted); border-color: var(--muted); } .t-dem { color: var(--c-out); border-color: var(--c-out); }
+.gradesgrid { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px; align-items: start; }
+.glist { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 7px 10px; margin-bottom: 4px; cursor: pointer; }
+.glist b { font-weight: 600; } .glist span { font-size: 11px; color: var(--muted); }
+.glist.on { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.chartpair { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 8px 0; }
+.chartpair .chart { height: 210px; }
+.editgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 18px; }
+.editgrid .row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+.editgrid .row.check { grid-template-columns: auto 1fr; }
+.editgrid .ctl select + select { margin-left: 2px; }
+.cols2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px 24px; margin-bottom: 10px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 6px 0 12px; }
+.tiles div { background: var(--panel-2); border-radius: 3px; padding: 8px 10px; }
+.tiles em { display: block; font: normal 10px var(--font-body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.tiles b { font: 600 18px var(--font-mono); font-variant-numeric: tabular-nums; }
+table.edit td { padding: 2px 4px; }
+table.edit input, table.edit select { width: 100%; min-width: 64px; padding: 3px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel-2); font: 12px var(--font-mono); }
+table.edit input[type=text] { min-width: 110px; font-family: var(--font-body); }
+table.edit .ovr { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel-2)); }
+table.data tr.win td { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+table.data td.bad { color: var(--st-red); font-weight: 600; }
+.srct { display: block; font: 9.5px var(--font-body); color: var(--muted); white-space: nowrap; }
+.srct.s-datasheet, .srct.s-standard, .srct.s-definition { color: var(--st-green); }
+.srct.s-assumption { color: var(--st-orange); }
+.cibar { position: relative; display: block; height: 6px; margin: 4px 0 2px; background: var(--grid); border-radius: 3px; }
+.cibar .ci { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--st-red); opacity: 0.45; }
+.cibar .cip { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--ink); }
+table.matrix td.mcell { cursor: pointer; }
+table.matrix td.selc { outline: 2px solid var(--accent); outline-offset: -2px; }
+.refs li { margin-bottom: 4px; }
+.prose ol, .prose ul { padding-left: 20px; }
+.prose a { color: var(--accent); }
+
+@media (max-width: 1180px) {
+  #tab-sim { grid-template-columns: 310px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; overflow: auto; }
+  .live { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); overflow: visible; }
+  .inputs { grid-row: 1; }
+}
+@media (max-width: 760px) {
+  .gradesgrid { grid-template-columns: 1fr; }
+  html, body { height: auto; }
+  .app { height: auto; display: block; }
+  .tab { height: auto; overflow: visible; }
+  #tab-sim { display: flex; flex-direction: column; overflow: visible; }
+  .inputs { border-right: 0; border-bottom: 1px solid var(--line); order: 2; }
+  .stage { order: 1; grid-template-rows: auto auto 68vh auto; }
+  .live { order: 3; display: flex; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .controls, .viewbar, .legend { padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+  .tabs { margin-left: 0; width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .row { grid-template-columns: minmax(0, 1fr) 140px; }
+}
+@media (prefers-reduced-motion: reduce) { #stBar { transition: none; } }
+
+/* 3D page additions */
+#view { cursor: grab; }
+.viewbar .grpbtn { display: inline-flex; gap: 2px; }
+#noGL { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; color: var(--muted); }
+.brand h1 .dimtag { font: 700 13px/1 var(--font-display); letter-spacing: 0.08em; color: var(--accent-ink); background: var(--accent); padding: 3px 6px; border-radius: 3px; margin-left: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1 class="logo"><svg class="logo-rock" viewBox="0 0 32 32" aria-hidden="true"><polygon points="3.5,21 7,11 15,5.5 25,7.5 29,17 25,26.5 12,27.5" fill="var(--accent)"/><polygon points="7,11 15,5.5 25,7.5 20.5,14 10,15" fill="#ffffff" opacity="0.35"/><polygon points="25,7.5 29,17 25,26.5 20.5,14" fill="#000000" opacity="0.22"/></svg><span class="logo-text"><span class="logo-do">Do</span><span>Dump</span></span><span class="dimtag">3D</span></h1>
+      <span class="level" title="See the Method tab">3D lab 0.3: full 3D DEM of the round pipe. Trend-checked against 3D silo clogging; not calibrated to rock tests.</span>
+    </div>
+    <nav class="tabs" aria-label="Pages">
+      <button type="button" data-tab="sim" aria-selected="true">Simulate</button>
+      <button type="button" data-tab="prob" aria-selected="false">Probability</button>
+      <button type="button" data-tab="results" aria-selected="false">Results</button>
+      <button type="button" data-tab="diag" aria-selected="false">Diagnostics</button>
+      <button type="button" data-tab="method" aria-selected="false" hidden>Method</button>
+      <button type="button" id="adminBtn" class="admin-btn" aria-pressed="false" title="Admin login for the Method tab">Admin</button>
+    </nav>
+    <dialog id="adminDlg" class="admin-dlg">
+      <form id="adminForm">
+        <h3>Admin login</h3>
+        <label>Username <input id="adminUser" type="text" autocomplete="username" required></label>
+        <label>Password <input id="adminPass" type="password" autocomplete="current-password" required></label>
+        <p id="adminMsg" class="note"></p>
+        <div class="btnrow"><button type="submit" class="btn sm">Log in</button><button type="button" id="adminCancel" class="btn sm">Cancel</button></div>
+      </form>
+    </dialog>
+  </header>
+
+  <main>
+    <section class="tab" id="tab-sim">
+      <aside class="inputs" id="inputs" aria-label="Inputs">
+        <details class="grp" open><summary>Geometry</summary><div class="grpbody" id="grp-geom"></div></details>
+        <details class="grp" open><summary>Rock grade and shape</summary><div class="grpbody" id="grp-rock"></div></details>
+        <details class="grp" open><summary>Continuous discharge and run</summary><div class="grpbody" id="grp-feed"></div></details>
+        <details class="grp"><summary>Vessel motion</summary><div class="grpbody" id="grp-vessel"></div></details>
+        <details class="grp" open><summary>Water effect</summary><div class="grpbody" id="grp-water"></div></details>
+        <details class="grp"><summary>Physics <small>provisional values</small></summary><div class="grpbody" id="grp-phys"></div></details>
+        <details class="grp"><summary>Simulation assumptions <small>provisional thresholds</small></summary><div class="grpbody"><p class="note">Detection thresholds and empirical-check constants are not engineering criteria. They are editable settings that decide how simulated behaviour is labelled. Solid fractions on this page are volume fractions.</p><div id="grp-det" style="display:flex;flex-direction:column;gap:6px"></div></div></details>
+        <details class="grp" open><summary>Checks</summary><div class="grpbody" id="checks"></div></details>
+        <details class="grp" open><summary>Analytical and empirical checks</summary><div class="grpbody" id="analytic"></div></details>
+        <details class="grp"><summary>Derived values</summary><div class="grpbody" id="derived"></div></details>
+        <div class="grpbody" style="padding-top:12px">
+          <div class="btnrow"><button type="button" class="btn sm" id="imp2d" title="Copy the inputs saved by the 2D page on this site">Load inputs from the 2D page</button><button type="button" class="btn sm ghost" id="cfgDefaults">Restore all defaults</button></div>
+          <p class="note" id="impMsg">The 3D page keeps its own inputs. The import reads what the 2D page saved in this browser; it works when both pages are served from the same site.</p>
+        </div>
+      </aside>
+
+      <div class="stage">
+        <div class="controls">
+          <button type="button" class="btn" id="bStart">Start</button>
+          <button type="button" class="btn ghost" id="bPause">Pause</button>
+          <button type="button" class="btn ghost" id="bResume">Resume</button>
+          <button type="button" class="btn ghost" id="bStep" title="Advance one detector sampling interval">Step</button>
+          <button type="button" class="btn ghost" id="bStop" title="End the run now and record the result">Finish</button>
+          <button type="button" class="btn ghost" id="bReset">Reset</button>
+          <span class="sep"></span>
+          <label for="topDur" class="durctl" title="Dumping duration, up to 24 hours">Duration
+            <input type="number" id="topDur" min="0" step="any" inputmode="decimal">
+            <select id="topDurUnit" aria-label="Duration unit"><option value="s">s</option><option value="min">min</option><option value="h">h</option></select>
+          </label>
+          <label for="speed">Speed
+            <select id="speed">
+              <option value="0.1">0.1x</option><option value="0.25">0.25x</option><option value="0.5">0.5x</option>
+              <option value="1">1x real time</option><option value="2">2x</option><option value="0">As fast as possible</option>
+            </select>
+          </label>
+        </div>
+        <div class="viewbar">
+          <label for="colorBy">Colour
+            <select id="colorBy"><option value="size">Nominal diameter Dn</option><option value="class">Shape class</option><option value="length">Stone length L</option><option value="velocity">Speed</option><option value="state">Stalled / moving</option></select>
+          </label>
+          <label title="Show the spheres the DEM uses instead of the stone body"><input type="checkbox" id="tgSph"> Contact spheres</label>
+          <label title="Remove the half of the pipe wall facing you"><input type="checkbox" id="tgCut" checked> Cutaway</label>
+          <label><input type="checkbox" id="tgWater" checked> Water levels</label>
+          <label for="wallAlpha">Wall opacity <input type="range" id="wallAlpha" min="0" max="1" step="0.05" value="0.3" style="width:70px"></label>
+          <span class="grpbtn">
+            <button type="button" class="btn sm ghost" id="bSide" title="Side view, tilt plane facing you">Side</button>
+            <button type="button" class="btn sm ghost" id="bIso" title="Three-quarter view">3/4</button>
+            <button type="button" class="btn sm ghost" id="bTop" title="Look down the pipe from the feed">Top</button>
+            <button type="button" class="btn sm ghost" id="bBot" title="Look up the pipe from the outlet">Bottom</button>
+          </span>
+          <button type="button" class="btn sm ghost" id="bFit">Fit</button>
+          <button type="button" class="btn sm ghost" id="bCrit" title="Zoom to the active dome, or the first overlap">Zoom critical</button>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="view" aria-label="3D view of the fall pipe window with stones"></canvas>
+          <div id="noGL" hidden>The 3D view needs WebGL and the three.js library. Check that WebGL is enabled and the page can load scripts from cdnjs.cloudflare.com. The simulation and charts still work.</div>
+          <div id="pending" hidden>Inputs changed. Press Reset to apply them.</div>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="live">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div id="statusPill" class="pill stw"><b>READY</b><span>Press Start</span></div>
+          <p id="bgNote" class="msg ok bgnote" hidden></p>
+          <div id="dumped" class="dumped"></div>
+          <div id="readout"></div>
+          <div id="reasons"></div>
+          <div id="archCard"></div>
+        </div>
+        <div class="charttools">
+          <label for="chartRange">Time axis
+            <select id="chartRange"><option value="auto">Elapsed time</option><option value="run">Whole planned run</option><option value="60">Last 1 min</option><option value="600">Last 10 min</option><option value="1800">Last 30 min</option></select>
+          </label>
+          <label for="chartSize">Chart size
+            <select id="chartSize"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large (wider panel)</option><option value="xl">Extra large (wider panel)</option></select>
+          </label>
+        </div>
+        <div class="chartbox"><button type="button" class="enl" data-big="flow" title="Open this chart large">Enlarge</button><canvas class="chart" id="ch-flow"></canvas></div>
+        <div class="chartbox"><button type="button" class="enl" data-big="inside" title="Open this chart large">Enlarge</button><canvas class="chart" id="ch-inside"></canvas></div>
+        <div class="chartbox"><button type="button" class="enl" data-big="vel" title="Open this chart large">Enlarge</button><canvas class="chart" id="ch-vel"></canvas></div>
+        <div class="chartbox"><button type="button" class="enl" data-big="status" title="Open this chart large">Enlarge</button><canvas class="chart short" id="ch-status"></canvas></div>
+        <div class="chartbox"><button type="button" class="enl" data-big="profile" title="Open this chart large">Enlarge</button><canvas class="chart tall" id="ch-profile"></canvas></div>
+        <div><h3>Events</h3><div id="liveEvents"></div></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-prob" hidden>
+      <div class="page">
+        <h2>Blockage probability: many 3D runs</h2>
+        <p class="note" id="stBase"></p>
+        <div class="studyform">
+          <div class="card">
+            <h3>Setup</h3>
+            <label class="row"><span class="lab">Vary</span><span class="ctl"><select id="stParam"></select></span></label>
+            <label class="row" id="stValuesRow"><span class="lab">Values</span><span class="ctl"><input type="text" id="stValues" placeholder="e.g. 800, 900, 1000"></span></label>
+            <label class="row"><span class="lab">Runs per cell (seeds)</span><span class="ctl"><input type="number" id="stReps" value="20" min="1" max="5000"></span></label>
+            <label class="row"><span class="lab">First seed</span><span class="ctl"><input type="number" id="stSeed" value="1"></span></label>
+            <label class="row"><span class="lab">Dumping time per run [s] (0 = as Simulate)</span><span class="ctl"><input type="number" id="stDur" value="30" min="0" step="any"></span></label>
+            <label class="row check"><input type="checkbox" id="stStop" checked><span>Stop a run once it reaches RED (persistent blockage)</span></label>
+          </div>
+          <div class="card">
+            <h3>Rock grades (rows)</h3>
+            <div id="stGrades" style="display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto"></div>
+          </div>
+          <div class="card" style="display:flex;flex-direction:column;gap:8px">
+            <h3>Run</h3>
+            <div class="btnrow"><button type="button" class="btn" id="stRun">Run study</button><button type="button" class="btn ghost" id="stCancel" disabled>Cancel</button></div>
+            <div class="prog"><div id="stBar"></div></div>
+            <div id="stProg">Idle.</div>
+            <p class="note" id="stMsg"></p>
+            <p class="note" id="stWorkers"></p>
+          </div>
+        </div>
+        <div class="card"><h3>Result matrix</h3><div id="stMatrix"><p class="note">Pick grades (rows) and a parameter to vary (columns), for example the bucket bottom ID, then Run study. With "None", each grade is run repeatedly with the current setup.</p></div></div>
+        <div class="card" id="stDetail"></div>
+        <div class="card">
+          <h3>Validation benchmark (3D silo clogging)</h3>
+          <p class="note" style="max-width:90ch">Runs this engine on identical dry spheres discharging from a flat-bottomed silo through a round orifice, 6 seeds each at orifice / sphere diameter 3, 4 and 6. Published 3D experiments (Zuriguel et al. 2005) find jams after a few to a few tens of grains at D/d = 3 and no jams above about 4.9 for spheres. Passing shows the 3D contact, friction and arching mechanics reproduce the clogging trend; it does not test water forces or rock shape. The silo is small (about 250 to 420 grains), so it checks the trend, not the exact critical size.</p>
+          <div class="btnrow"><button type="button" class="btn sm" id="benchRun">Run benchmark</button><span class="note" id="benchProg"></span></div>
+          <div id="benchOut"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-results" hidden>
+      <div class="page">
+        <h2>3D run results</h2>
+        <div class="card" id="resSummary"></div>
+        <div class="card">
+          <div class="sumhead"><h3>Compare runs</h3><button type="button" class="btn sm ghost" id="resClear">Clear all</button></div>
+          <p class="note">Every completed 3D run is listed. Kept in this browser only, separate from the 2D run list.</p>
+          <div id="resCompare"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-diag" hidden>
+      <div class="page">
+        <h2>Validation and diagnostics</h2>
+        <div class="card">
+          <h3>Is this physics or numerics?</h3>
+          <p class="note" style="max-width:90ch">Treat a result as possibly meaningful only if: the count and mass balances close, maximum overlap stays below about 5 % of radius, no stones escape through walls, and the same outcome appears with a different seed, a halved time step and stiffer contacts. Use the buttons to rerun with one change at a time and compare in Results.</p>
+          <div class="btnrow">
+            <button type="button" class="btn sm" data-sens="seed">Rerun with next seed</button>
+            <button type="button" class="btn sm" data-sens="dt">Rerun with half time step</button>
+            <button type="button" class="btn sm" data-sens="k">Rerun with 2x stiffness</button>
+          </div>
+        </div>
+        <div id="diagBody"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-method" hidden>
+      <div class="page">
+        <h2>3D method, assumptions and status</h2>
+        <div class="card prose">
+          <h3>What changes from the 2D page</h3>
+          <ul>
+            <li><b>Full pipe, no slice.</b> Stones move in the round pipe with 6 degrees of freedom. The whole mass flow is released, so masses and rates are real tonnes and t/h; no slice factor.</li>
+            <li><b>Stones.</b> Same grade sampler and shape classes as 2D (mass, Dn, Zingg classes, volume factor, Lmax cap, measured sub-population). The body is a superellipsoid |x/a|^p + |y/b|^p + |z/c|^p = 1 inside the L x B x T box, with p set so the volume is the volume factor times L B T: p = 2.33 for blocks at 0.6 (flat-ish faces, rounded corners), p = 2 for rounded and L/T stones (ellipsoid). Every contact sphere is inscribed in that body, chosen to cover its surface (up to 24 spheres, symmetric, axis tips weighted so L, B and T are reached: on average 97 to 99 % of each half axis). The drawn stone is the same body. Inertia from the superellipsoid. Orientation is a uniform random quaternion.</li>
+            <li><b>Correction in 0.2.</b> Version 0.1 put 8 spheres at the corners of the full bounding box. A stone 720 mm long was then 830 mm across its diagonal, wider than a real rock with that volume factor, and wider than the drawn stone. Stones smaller than the opening wedged across the bucket lip. At 4000 t/h with 800 mm bucket bottoms, 6 of 6 seeds blocked with v0.1, 5 of them on single stones smaller than the passage; with v0.2, 5 of 6 flow and the sixth is a multi-stone dome. The dome card now lists the jammed stone's L x B x T against the passage.</li>
+            <li><b>Walls.</b> Each bucket, wall thickness, lip, insertion ledge, the feed chute or funnel and the restart gate is the same closed quadrilateral as in 2D, revolved about the axis. A sphere meets a revolved segment at the closest point in its own meridian plane, which is exact for surfaces of revolution.</li>
+            <li><b>Contacts.</b> Same laws as 2D: linear spring-dashpot normal force from the restitution coefficient, incremental tangential spring with the Coulomb limit (a 3D vector kept in the tangent plane by projection and rescaling every step), constant rolling torque opposing the relative spin, stiffness scaled by stone size and by E* of the wall material.</li>
+            <li><b>Rotation.</b> Unit quaternions, Euler's equations in the body frame with the gyroscopic term, semi-implicit Euler.</li>
+            <li><b>Time step.</b> A contact on a clump also turns the stone, so the effective mass at the contact is m / (1 + m d^2 / I). The shortest contact time uses the smallest value of that over the stone sample, which roughly halves the time step against the 2D rule. Without it, settled packs did not come to rest and high damping became unstable.</li>
+            <li><b>Water.</b> The same 1D coupled water column along the whole string (entrained flow, joint leakage, free surface in the moonpool, Di Felice hindrance, pressure gradient, added mass). The local voidage is the stone volume in the cross-section (2D used 2/3 of the in-plane area fraction).</li>
+            <li><b>Pipe tilt.</b> As in 2D the DEM pipe stays straight and gravity turns with the local link angle; stones settle towards -x.</li>
+            <li><b>Feed (0.3).</b> "Drop" releases stones at rest across the feed opening, falling straight; they barely touch the walls in the moonpool. "Conveyor discharge" releases a stream at the feed offset with the belt speed horizontally (direction in the pipe section, scatter of speed and direction), the vertical speed of the drop below the head pulley and forward spin (share of v/r). Stones then hit the funnel or the first bucket wall on the far side and arrive at the water tumbling, as in operation.</li>
+            <li><b>Vessel motion (0.3).</b> Regular roll, pitch and heave with random phases per run. In the pipe frame the apparent gravity is turned by the roll and pitch angles, the pipe at depth z below the roll centre accelerates sideways by z times the angular acceleration (the inertial term +z w^2 theta opposes the gravity tilt below z = g / w^2), and heave changes apparent gravity by (g + h'')/g, also for buoyancy. The string moves rigidly with the vessel; its own dynamic response, sloshing of the water column and current-induced motion are not modelled.</li>
+            <li><b>Numerical precision (0.3).</b> Presets for the contact stiffness and time step. High (default): overlap at most 1 % of Dn50 at the terminal velocity of Dn90, dt at most 0.10 t_c. Very high: overlap 0.5 % at the water entry speed of the dry fall, dt 0.07 t_c. The values used are listed under Derived values; compare Standard and High on a case to see whether a result depends on the numerics.</li>
+            <li><b>Outputs (0.3).</b> Wall impacts per bucket (new contacts with normal speed above 0.3 m/s: count, energy, peak speed) for wear and lip loading, and the speed and long-axis angle of stones crossing the water surface (60 deg median = random orientation).</li>
+            <li><b>Collisions in water.</b> Wet restitution depends on the Stokes number St = rho_s v d / (9 mu) (Joseph et al. 2001); it approaches the dry value above St of about 1000. Rock impacts here have St of about 10^4 to 10^5, so the dry restitution input applies and no lubrication correction is added.</li>
+            <li><b>Rock-wall friction.</b> Interface shear tests of granular soil on smooth HDPE geomembranes report friction angles of roughly 15 to 25 deg (mu about 0.27 to 0.47). The HDPE default 0.3 sits in that range. It is still an assumption for wet quarried rock on a bucket wall: use the Probability tab's friction sensitivity to see how much it matters for a given case.</li>
+            <li><b>Arches.</b> In a round pipe a dome must lean on the wall all round. The engine records the azimuth of each wall contact in 12 sectors of 30 deg; a connected group of stalled stones spans the pipe when its wall contacts touch at least 3 sectors and are not confined to one half of the circumference. A single stone meeting that test is a single-stone obstruction. Status levels, events and run classes are otherwise identical to 2D.</li>
+            <li><b>Solid fraction.</b> Volume fraction in each axial bin. The dense-zone threshold default is 0.35 (2D: 0.5 in-plane).</li>
+          </ul>
+          <h3>Checks run on the engine</h3>
+          <ul>
+            <li>3D silo clogging benchmark (Probability tab): identical dry spheres through a round orifice. At D/d = 3 all runs jammed after 4 to 70 grains; at D/d = 4 and 6 the silo emptied to its dead zone without a loaded arch, matching the trend of Zuriguel et al. 2005 (no jams above about 4.9 for spheres).</li>
+            <li>Single sphere in still water reaches the Newton-drag terminal velocity exactly (3.065 m/s for the test case, analytic 3.065 m/s), with no lateral drift.</li>
+            <li>40 stones settling on the closed restart gate come to rest: kinetic energy from about 250 J to below 0.001 J, highest speed 3 mm/s, overlap about 1 % of stone radius, also with restitution 0.1.</li>
+            <li>Count and mass balance close to zero in every run; no stones escaped in the test runs.</li>
+          </ul>
+          <h3>Not yet done</h3>
+          <ul>
+            <li>No validation against 3D clogging experiments (for example Janda et al. 2015 narrow pipes, Thomas and Durian 2015 hoppers). Read single runs as mechanisms; compare seeds before drawing conclusions.</li>
+            <li>The body is a smooth superellipsoid; real rock faces and sharp edges are approximated by its exponent. The sphere fill lies inside the body, so contact is never larger than the stone (gap to the surface on average about 12 % of T/2).</li>
+            <li>No radial water velocity profile, wakes or CFD coupling (level 3).</li>
+            <li>The string editor and grade import stay on the 2D page for now. The 3D engine uses the same module interfaces (geometry, factory, engine, detector), so it can be added to the 2D page as a model choice once it has been checked.</li>
+          </ul>
+          <h3>Probability tab</h3>
+          <p>Each cell is one rock grade (row) and one value of the varied parameter (column), run with as many seeds as you set, headless in background workers (one per CPU core less one). Result per cell: share of runs with persistent blockage and with any dome, 95 % Wilson intervals, Poisson blockage rate per 1000 t discharged, time and rock discharged before blockage, where it blocks, the stones in the blocking dome, wall impacts. Replay sends any run with its seed to the Simulate tab. For pipe size against rock size, tick the grades and vary the bucket bottom ID (or bottom with the top ID scaled). Use the same seeds, duration and precision for every cell you compare.</p>
+          <h3>Performance</h3>
+          <p>The engine sorts stones along the axis every step and only tests pairs whose bounding spheres overlap. At High precision the time step is about 3x smaller than Standard. Expect near real time with a few stones in the window and 0.1x to 0.3x with 40 to 60 stones on a laptop; the Probability tab runs several such runs in parallel.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div id="bigDlg" class="bigdlg" hidden role="dialog" aria-modal="true" aria-labelledby="bigTitle">
+    <div class="bigpanel">
+      <div class="bighead"><h3 id="bigTitle">Chart</h3><span class="note">Updates live. Time axis follows the selector in the side panel.</span><button type="button" class="btn sm ghost" id="bigClose">Close</button></div>
+      <canvas id="bigCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/coupled/system.js"></script>
+<script src="js/coupled/catenary.js"></script>
+<script src="js/coupled/hydro.js"></script>
+<script src="js/coupled/vessel.js"></script>
+<script src="js/coupled/rov.js"></script>
+<script src="js/materials.js"></script>
+<script src="js/grades.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/shapes.js"></script>
+<script src="js/string.js"></script>
+<script src="js/config.js"></script>
+<script src="js/units.js"></script>
+<script src="js/geometry.js"></script>
+<script src="js/water.js"></script>
+<script src="js/detection.js"></script>
+<script src="js/results.js"></script>
+<script src="js/checks.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/admin-config.js"></script>
+<script src="js/admin.js"></script>
+<script src="js3d/shapes3d.js"></script>
+<script src="js3d/particles3d.js"></script>
+<script src="js3d/geometry3d.js"></script>
+<script src="js3d/config3d.js"></script>
+<script src="js3d/physics3d.js"></script>
+<script src="js3d/detection3d.js"></script>
+<script src="js3d/extra3d.js"></script>
+<script src="js3d/runner3d.js"></script>
+<script src="js3d/bench3d.js"></script>
+<script src="js3d/study3d.js"></script>
+<script src="js3d/render3d.js"></script>
+<script src="js3d/ui3d.js"></script>
+<script src="js3d/prob3d.js"></script>
+</body>
+</html>
